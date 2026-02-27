@@ -1,73 +1,47 @@
-# React + TypeScript + Vite
+That README is definitely a bit dry—it's just the default boilerplate for a new project. Since you've built a sophisticated app with **Google Maps**, **OpenAI**, and **Supabase**, your README should actually reflect the "UniMeet" journey.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Here is a much better version you can have Claude swap in. It tells the story of the project from the ground up.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+# 🎓 UniMeet: The Campus Social Hub
 
-## React Compiler
+UniMeet is a high-fidelity campus networking app designed to bridge the gap between "I'm free" and "Let's hang out." Built with a premium dark-themed UI, it integrates real-time location services and AI-assisted planning.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🚀 The Journey So Far
 
-## Expanding the ESLint configuration
+### 1. Foundation & Authentication
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+* **Supabase Auth**: Wired up a secure login flow with custom `AuthContext`.
+* **Onboarding**: Implemented an "Upsert" logic to prevent duplicate profile crashes while collecting user interests.
+* **Premium UI**: Established a consistent palette: Background `#051124`, Cards `#121E31`, and Gold highlights `#F3D99A`.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 2. The Discovery Engine
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+* **Smart Planning**: Built an interactive "Create Plan" form featuring custom-built **Date/Time** and **Location** popovers.
+* **Google Maps Integration**: Dynamically loads the Google Maps JS SDK for real-time location autocomplete without external heavy libraries.
+* **✨ AI Description**: Integrated `gpt-4o-mini` to automatically generate fun event descriptions based on user inputs.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### 3. Social Connectivity (My Circle)
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+* **Live Status**: Users can toggle their "Free to hang out" status, which updates their `last_seen` heartbeat in the database.
+* **Bidirectional Friendships**: A custom Supabase query handles friendship logic so plans are shared instantly between connected users.
+* **Squads & Events**: Added dedicated spaces for group-based networking and larger campus events.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 🛠️ Tech Stack
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+* **Frontend**: React + TypeScript + Vite
+* **Backend/DB**: Supabase (PostgreSQL + RLS)
+* **APIs**: Google Places API, OpenAI API
+* **Styling**: Modern CSS-in-JS for responsive dark-mode layouts
+
+## 🔧 Database Configuration
+
+To get this working, the following tables were added to Supabase:
+
+* `profiles`: Tracks `current_status` and `last_seen`.
+* `activities`: Stores plans with `max_guests` constraints.
+* `friendships`: Manages bidirectional social links.
+
+---
+
