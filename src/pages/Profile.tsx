@@ -1,11 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { profile, signOut, user } = useAuth();
+  const { profile, signOut, user, refreshProfile } = useAuth();
   
   // Theme state synced with localStorage
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') !== 'light');
@@ -42,7 +42,7 @@ const Profile = () => {
       const { error: updateError } = await supabase.from('profiles').update({ avatar_url: filePath }).eq('id', user?.id);
       if (updateError) throw updateError;
 
-      window.location.reload();
+      await refreshProfile();
     } catch (e) {
       alert("Error uploading image");
     } finally {

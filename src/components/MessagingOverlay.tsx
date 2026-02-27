@@ -7,7 +7,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 const MessagingOverlay = ({ isOpen, onClose, theme }: any) => {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
 
   const [conversations, setConversations] = useState<any[]>([]);
   const [activeConv, setActiveConv] = useState<any>(null);

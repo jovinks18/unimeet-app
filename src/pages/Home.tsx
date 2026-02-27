@@ -107,8 +107,11 @@ const Home = () => {
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <div onClick={() => setIsMsgOpen(true)} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.03)', display: 'flex', justifyContent: 'center', alignItems: 'center', border: `1px solid ${theme.border}`, cursor: 'pointer' }}>💬</div>
             <div onClick={() => setIsCalOpen(true)} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.03)', display: 'flex', justifyContent: 'center', alignItems: 'center', border: `1px solid ${theme.border}`, cursor: 'pointer' }}>📅</div>
-            <div onClick={() => navigate('/profile')} style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: '#3B82F6', border: '2px solid white', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' }}>
-              {profile?.full_name ? profile.full_name[0].toUpperCase() : 'U'}
+            <div onClick={() => navigate('/profile')} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#3B82F6', border: '2px solid rgba(243,217,154,0.4)', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', flexShrink: 0 }}>
+              {profile?.avatar_url
+                ? <img src={supabase.storage.from('avatars').getPublicUrl(profile.avatar_url).data.publicUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : <span style={{ fontSize: '14px', fontWeight: '800', color: 'white' }}>{profile?.full_name?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase() ?? 'U'}</span>
+              }
             </div>
           </div>
         </header>

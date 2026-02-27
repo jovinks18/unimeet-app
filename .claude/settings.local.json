@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit -m \"Remove .env from tracking and add to .gitignore:*)"
+    ]
+  }
+}
