@@ -1,9 +1,3 @@
-That README is definitely a bit dry—it's just the default boilerplate for a new project. Since you've built a sophisticated app with **Google Maps**, **OpenAI**, and **Supabase**, your README should actually reflect the "UniMeet" journey.
-
-Here is a much better version you can have Claude swap in. It tells the story of the project from the ground up.
-
----
-
 # 🎓 UniMeet: The Campus Social Hub
 
 UniMeet is a high-fidelity campus networking app designed to bridge the gap between "I'm free" and "Let's hang out." Built with a premium dark-themed UI, it integrates real-time location services and AI-assisted planning.
