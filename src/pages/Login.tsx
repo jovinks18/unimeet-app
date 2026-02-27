@@ -5,19 +5,20 @@ const Login = () => {
   const [email, setEmail] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<string>('');
+  const [emailFocused, setEmailFocused] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage(''); 
-    
+    setMessage('');
+
     // .edu Validator
     if (!email.toLowerCase().endsWith('.edu')) {
       setMessage('Access Denied: Please use a valid university (.edu) email.');
-      return; 
+      return;
     }
 
     setLoading(true);
-    
+
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email,
@@ -40,34 +41,51 @@ const Login = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-slate-900 text-white p-4">
-      <div className="w-full max-w-md bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700">
-        <h1 className="text-4xl font-black mb-2 text-blue-500 text-center">UniMeet</h1>
-        <p className="text-slate-400 text-center mb-8">Sign in with your campus email</p>
-        
-        <form onSubmit={handleLogin} className="space-y-4">
-          <input 
-            type="email" 
-            placeholder="name@university.edu" 
-            className="w-full p-4 rounded-xl bg-slate-700 border border-slate-600 focus:border-blue-500 outline-none transition"
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#0F172A', color: 'white', padding: '16px' }}>
+      <div style={{ width: '100%', maxWidth: '448px', backgroundColor: '#1E293B', padding: '32px', borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', border: '1px solid #334155' }}>
+
+        <h1 style={{ fontSize: '36px', fontWeight: '900', marginBottom: '8px', color: '#3B82F6', textAlign: 'center' }}>UniMeet</h1>
+        <p style={{ color: '#94A3B8', textAlign: 'center', marginBottom: '32px' }}>Sign in with your campus email</p>
+
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <input
+            type="email"
+            placeholder="name@university.edu"
+            style={{
+              width: '100%', padding: '16px', borderRadius: '12px',
+              backgroundColor: '#334155',
+              border: emailFocused ? '1px solid #3B82F6' : '1px solid #475569',
+              outline: 'none', color: 'white', fontSize: '15px',
+              transition: 'border-color 0.2s',
+            }}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onFocus={() => setEmailFocused(true)}
+            onBlur={() => setEmailFocused(false)}
             required
           />
-          <button 
+          <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 py-4 rounded-xl font-bold text-lg transition shadow-lg shadow-blue-900/20 disabled:opacity-50"
+            style={{
+              width: '100%', backgroundColor: '#2563EB', color: 'white',
+              padding: '16px', borderRadius: '12px', fontWeight: '700',
+              fontSize: '18px', border: 'none',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.5 : 1,
+              transition: 'opacity 0.2s',
+            }}
           >
             {loading ? 'Sending...' : 'Send Magic Link'}
           </button>
         </form>
-        
+
         {message && (
-          <div className="mt-6 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-center text-sm">
+          <div style={{ marginTop: '24px', padding: '16px', borderRadius: '8px', backgroundColor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', color: '#60A5FA', textAlign: 'center', fontSize: '14px' }}>
             {message}
           </div>
         )}
+
       </div>
     </div>
   );

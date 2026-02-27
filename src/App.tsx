@@ -8,7 +8,7 @@ import Profile from './pages/Profile';
 function App() {
   const { user, profile, loading } = useAuth();
 
-  if (loading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white font-black italic text-2xl">UniMeet...</div>;
+  if (loading) return <div style={{ minHeight: '100vh', backgroundColor: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '900', fontStyle: 'italic', fontSize: '24px' }}>UniMeet...</div>;
 
   return (
     <BrowserRouter>
