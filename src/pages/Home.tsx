@@ -10,7 +10,7 @@ import MyCircleTab from './MyCircleTab';
 import EventsTab from './EventsTab';
 
 const Home = () => {
-  const { user, profile } = useAuth();
+  const { user, profile, theme } = useAuth();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('Discovery');
@@ -22,10 +22,11 @@ const Home = () => {
   const [liveFriends, setLiveFriends] = useState<any[]>([]);
   const [friendsPlans, setFriendsPlans] = useState<any[]>([]);
 
-  const theme = {
-    bg: '#051124', card: '#121E31', text: '#FFFFFF', subText: '#64748b',
-    border: 'rgba(255,255,255,0.05)', navActive: '#F3D99A'
-  };
+  const hour = new Date().getHours();
+  const firstName = profile?.full_name?.split(' ')[0] ?? 'there';
+  const greeting = hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : hour < 21 ? 'Evening' : 'Night';
+  const greetingEmoji = hour < 12 ? '☀️' : hour < 17 ? '🌤️' : hour < 21 ? '🌆' : '🌙';
+  const subtext = hour < 12 ? "What's the move?" : hour < 17 ? 'Any plans brewing?' : hour < 21 ? "What's happening tonight?" : 'Still up? Plan something 👀';
 
   const fetchPosts = async () => {
     const { data } = await supabase.from('activities').select('*, profiles:user_id(*)').order('created_at', { ascending: false });
@@ -98,15 +99,15 @@ const Home = () => {
   };
 
   return (
-    <div style={{ backgroundColor: theme.bg, minHeight: '100vh', width: '100%', display: 'flex', justifyContent: 'center', color: theme.text }}>
+    <div className="page-fade" style={{ backgroundColor: theme.bg, minHeight: '100vh', width: '100%', display: 'flex', justifyContent: 'center', color: theme.text }}>
       <div style={{ width: '100%', maxWidth: '440px', padding: '0 16px' }}>
         
         {/* HEADER */}
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 0' }}>
           <h1 style={{ fontSize: '24px', fontWeight: '900', margin: 0 }}>UniMeet</h1>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <div onClick={() => setIsMsgOpen(true)} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.03)', display: 'flex', justifyContent: 'center', alignItems: 'center', border: `1px solid ${theme.border}`, cursor: 'pointer' }}>💬</div>
-            <div onClick={() => setIsCalOpen(true)} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.03)', display: 'flex', justifyContent: 'center', alignItems: 'center', border: `1px solid ${theme.border}`, cursor: 'pointer' }}>📅</div>
+            <div onClick={() => setIsMsgOpen(true)} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: theme.inactiveBtnBg, display: 'flex', justifyContent: 'center', alignItems: 'center', border: `1px solid ${theme.navBorder}`, cursor: 'pointer' }}>💬</div>
+            <div onClick={() => setIsCalOpen(true)} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: theme.inactiveBtnBg, display: 'flex', justifyContent: 'center', alignItems: 'center', border: `1px solid ${theme.navBorder}`, cursor: 'pointer' }}>📅</div>
             <div onClick={() => navigate('/profile')} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#3B82F6', border: '2px solid rgba(243,217,154,0.4)', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', flexShrink: 0 }}>
               {profile?.avatar_url
                 ? <img src={supabase.storage.from('avatars').getPublicUrl(profile.avatar_url).data.publicUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -117,7 +118,7 @@ const Home = () => {
         </header>
 
         {/* NAVIGATION */}
-        <nav style={{ display: 'flex', gap: '24px', borderBottom: `1px solid ${theme.border}`, marginBottom: '12px' }}>
+        <nav style={{ display: 'flex', gap: '24px', borderBottom: `1px solid ${theme.navBorder}`, marginBottom: '12px' }}>
           {['Discovery', 'My Circle', 'Events'].map(tab => (
             <div key={tab} onClick={() => setActiveTab(tab)} style={{ paddingBottom: '10px', cursor: 'pointer', color: activeTab === tab ? theme.text : theme.subText, fontWeight: '700', fontSize: '14px', position: 'relative' }}>
               {tab}
@@ -129,12 +130,33 @@ const Home = () => {
         {/* TAB CONTENT */}
         {activeTab === 'Discovery' && (
           <div>
-            {/* List / Map toggle — flush right */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '15px' }}>
-              <div style={{ display: 'flex', backgroundColor: theme.card, borderRadius: '8px', padding: '2px', border: `1px solid ${theme.border}` }}>
-                <div onClick={() => setViewMode('list')} style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '10px', cursor: 'pointer', backgroundColor: viewMode !== 'map' ? 'rgba(243,217,154,0.1)' : 'transparent', opacity: viewMode !== 'map' ? 1 : 0.4, transition: 'all 0.2s' }}>🏠</div>
-                <div onClick={() => setViewMode('map')}  style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '10px', cursor: 'pointer', backgroundColor: viewMode === 'map' ? 'rgba(243,217,154,0.1)' : 'transparent', opacity: viewMode === 'map' ? 1 : 0.4, transition: 'all 0.2s' }}>🗺️</div>
+            {/* Greeting + View Switcher — single flex row */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+
+              {/* LEFT: greeting stack */}
+              <div>
+                <div style={{ fontSize: '24px', fontWeight: '900', letterSpacing: '-0.5px', lineHeight: 1.15 }}>
+                  {greeting}, {firstName}! {greetingEmoji}
+                </div>
+                <div style={{ fontSize: '13px', color: '#64748b', marginTop: '5px', fontWeight: '500' }}>
+                  {subtext}
+                </div>
               </div>
+
+              {/* RIGHT: view switcher — top-aligned, vertically centred to cap-height via marginTop */}
+              <div style={{
+                display: 'flex', flexShrink: 0,
+                backgroundColor: theme.cardBg,
+                backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+                borderRadius: '12px', padding: '3px',
+                border: `1px solid ${theme.cardBorder}`,
+                boxShadow: theme.cardShadow,
+                marginTop: '3px',
+              }}>
+                <div onClick={() => setViewMode('list')} style={{ padding: '5px 10px', borderRadius: '9px', fontSize: '14px', cursor: 'pointer', backgroundColor: viewMode !== 'map' ? 'rgba(255,215,0,0.12)' : 'transparent', opacity: viewMode !== 'map' ? 1 : 0.4, transition: 'all 0.2s' }}>🏠</div>
+                <div onClick={() => setViewMode('map')}  style={{ padding: '5px 10px', borderRadius: '9px', fontSize: '14px', cursor: 'pointer', backgroundColor: viewMode === 'map'  ? 'rgba(255,215,0,0.12)' : 'transparent', opacity: viewMode === 'map'  ? 1 : 0.4, transition: 'all 0.2s' }}>🗺️</div>
+              </div>
+
             </div>
 
             {/* LIST: Create Plan form + Activity Feed */}
@@ -153,18 +175,22 @@ const Home = () => {
                 />
                 <div style={{ marginTop: '24px' }}>
                   {posts.map((post) => (
-                    <div key={post.id} style={{ backgroundColor: theme.card, borderRadius: '24px', padding: '20px', marginBottom: '16px', border: `1px solid ${theme.border}` }}>
+                    <div key={post.id} style={{
+                      backgroundColor: theme.cardBg, borderRadius: '24px', padding: '20px', marginBottom: '16px',
+                      border: `1px solid ${theme.cardBorder}`, boxShadow: theme.cardShadow,
+                      backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+                    }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                          <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: '#3B82F6', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: 'bold' }}>{post.profiles?.full_name?.[0]}</div>
-                          <span style={{ fontWeight: 'bold', fontSize: '14px' }}>{post.profiles?.full_name}</span>
+                          <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: '#3B82F6', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: 'bold', color: '#fff' }}>{post.profiles?.full_name?.[0]}</div>
+                          <span style={{ fontWeight: '800', fontSize: '14px', color: theme.text }}>{post.profiles?.full_name}</span>
                         </div>
                         <div style={{ backgroundColor: 'rgba(243, 217, 154, 0.1)', padding: '4px 10px', borderRadius: '8px', color: theme.navActive, fontSize: '10px', fontWeight: '800' }}>{post.category}</div>
                       </div>
-                      <p style={{ fontSize: '14px', color: '#E2E8F0', marginBottom: '16px', lineHeight: '1.5' }}>{post.description}</p>
+                      <p style={{ fontSize: '14px', color: theme.text, marginBottom: '16px', lineHeight: '1.5', opacity: 0.9 }}>{post.description}</p>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div style={{ fontSize: '12px', color: theme.subText }}>🕒 {post.when_time} • 📍 {post.where_location}</div>
-                        <button onClick={() => handleJoin(post.id)} style={{ backgroundColor: theme.navActive, color: '#051124', border: 'none', padding: '8px 16px', borderRadius: '12px', fontWeight: '800', fontSize: '12px', cursor: 'pointer' }}>Join Plan</button>
+                        <button onClick={() => handleJoin(post.id)} style={{ backgroundColor: '#FFD700', color: '#050B18', border: 'none', padding: '8px 16px', borderRadius: '12px', fontWeight: '800', fontSize: '12px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(255,215,0,0.25)' }}>Join Plan</button>
                       </div>
                     </div>
                   ))}
@@ -175,13 +201,13 @@ const Home = () => {
             {/* MAP: full-screen map replacing the deck */}
             {viewMode === 'map' && (
               <div className="page-fade">
-                <MapView posts={posts} theme={theme} onJoin={handleJoin} />
+                <MapView posts={posts} theme={theme} onJoin={handleJoin} onCreateEvent={() => setViewMode('list')} />
               </div>
             )}
           </div>
         )}
 
-        {activeTab === 'My Circle' && <MyCircleTab theme={theme} joinedActivities={joinedActivities} liveFriends={liveFriends} friendsPlans={friendsPlans} />}
+        {activeTab === 'My Circle' && <MyCircleTab joinedActivities={joinedActivities} liveFriends={liveFriends} friendsPlans={friendsPlans} />}
         {activeTab === 'Events' && <EventsTab />}
 
         <MessagingOverlay isOpen={isMsgOpen} onClose={() => setIsMsgOpen(false)} theme={theme} />

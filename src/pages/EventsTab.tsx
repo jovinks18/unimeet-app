@@ -18,8 +18,7 @@ const parseDateBadge = (whenTime: string): { day: string; month: string } => {
   return { day, month };
 };
 
-// Small circular avatar — image if available, initials otherwise
-const AvatarBubble = ({ participant, size = 26 }: { participant: any; size?: number }) => {
+const AvatarBubble = ({ participant, size = 28, borderColor }: { participant: any; size?: number; borderColor: string }) => {
   const avatarUrl = participant.profiles?.avatar_url
     ? supabase.storage.from('avatars').getPublicUrl(participant.profiles.avatar_url).data.publicUrl
     : null;
@@ -28,10 +27,11 @@ const AvatarBubble = ({ participant, size = 26 }: { participant: any; size?: num
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%',
-      border: '2px solid #121E31', overflow: 'hidden', flexShrink: 0,
+      border: `2px solid ${borderColor}`,
+      overflow: 'hidden', flexShrink: 0,
       backgroundColor: '#1A283D',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: Math.round(size * 0.4), fontWeight: '700', color: '#F3D99A',
+      fontSize: Math.round(size * 0.38), fontWeight: '700', color: '#F3D99A',
     }}>
       {avatarUrl
         ? <img src={avatarUrl} alt={initial} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -41,11 +41,41 @@ const AvatarBubble = ({ participant, size = 26 }: { participant: any; size?: num
   );
 };
 
+const SkeletonCard = ({ cardBg }: { cardBg: string }) => (
+  <div style={{
+    backgroundColor: cardBg, borderRadius: '32px', padding: '20px',
+    border: '1px solid rgba(255,255,255,0.05)',
+    backdropFilter: 'blur(16px)',
+    display: 'flex', flexDirection: 'column', gap: '14px',
+  }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="bento-skeleton" style={{ width: '52px', height: '52px', borderRadius: '16px' }} />
+      <div className="bento-skeleton" style={{ width: '68px', height: '22px', borderRadius: '20px' }} />
+    </div>
+    <div>
+      <div className="bento-skeleton" style={{ height: '18px', borderRadius: '8px', marginBottom: '8px', width: '75%' }} />
+      <div className="bento-skeleton" style={{ height: '13px', borderRadius: '8px', marginBottom: '4px' }} />
+      <div className="bento-skeleton" style={{ height: '13px', borderRadius: '8px', width: '55%' }} />
+    </div>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+      <div style={{ display: 'flex' }}>
+        {[0, 1, 2].map(i => (
+          <div key={i} className="bento-skeleton" style={{
+            width: '28px', height: '28px', borderRadius: '50%',
+            marginLeft: i > 0 ? -8 : 0,
+          }} />
+        ))}
+      </div>
+      <div className="bento-skeleton" style={{ width: '74px', height: '34px', borderRadius: '12px' }} />
+    </div>
+  </div>
+);
+
 const EventsTab = () => {
-  const { user, profile } = useAuth();
+  const { user, profile, theme } = useAuth();
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [joining, setJoining] = useState<string | null>(null); // id of the activity currently being acted on
+  const [joining, setJoining] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -71,7 +101,7 @@ const EventsTab = () => {
     if (!user || joining) return;
     setJoining(eventId);
 
-    // Optimistic: show the user's avatar immediately
+    // Optimistic update
     setEvents(prev => prev.map(e => e.id !== eventId ? e : {
       ...e,
       activity_participants: [
@@ -100,7 +130,7 @@ const EventsTab = () => {
     if (!user || joining) return;
     setJoining(eventId);
 
-    // Optimistic: remove the user's avatar immediately
+    // Optimistic update
     setEvents(prev => prev.map(e => e.id !== eventId ? e : {
       ...e,
       activity_participants: (e.activity_participants ?? []).filter((p: any) => p.user_id !== user.id),
@@ -130,141 +160,165 @@ const EventsTab = () => {
   return (
     <div>
       {/* SEARCH BAR */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '25px' }}>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
         <div style={{
-          flex: 1, backgroundColor: '#121E31', borderRadius: '15px', padding: '12px 15px',
-          border: '1px solid rgba(255,255,255,0.1)', color: '#64748b', fontSize: '14px',
+          flex: 1, backgroundColor: theme.cardBg, borderRadius: '16px', padding: '12px 16px',
+          border: `1px solid ${theme.cardBorder}`, color: theme.subText, fontSize: '14px',
+          backdropFilter: 'blur(16px)', boxShadow: theme.cardShadow,
         }}>
           🔍 Search events...
         </div>
         <div style={{
-          backgroundColor: '#121E31', borderRadius: '15px', padding: '12px',
-          border: '1px solid rgba(255,255,255,0.1)',
+          backgroundColor: theme.cardBg, borderRadius: '16px', padding: '12px 14px',
+          border: `1px solid ${theme.cardBorder}`, backdropFilter: 'blur(16px)',
+          display: 'flex', alignItems: 'center', boxShadow: theme.cardShadow,
         }}>📅</div>
       </div>
 
-      <span style={{ fontSize: '12px', fontWeight: '900', letterSpacing: '1px', display: 'block', marginBottom: '15px' }}>
+      <span style={{ fontSize: '11px', fontWeight: '900', letterSpacing: '1.5px', display: 'block', marginBottom: '16px', color: '#475569' }}>
         UPCOMING EVENTS
       </span>
 
+      {/* SKELETON LOADING */}
       {loading && (
-        <div style={{ textAlign: 'center', color: '#64748b', padding: '48px 0', fontSize: '14px' }}>
-          Loading events...
+        <div className="bento-grid">
+          <SkeletonCard cardBg={theme.cardBg} />
+          <SkeletonCard cardBg={theme.cardBg} />
+          <SkeletonCard cardBg={theme.cardBg} />
+          <SkeletonCard cardBg={theme.cardBg} />
         </div>
       )}
 
       {!loading && events.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '48px 0' }}>
-          <div style={{ fontSize: '40px', marginBottom: '12px' }}>📭</div>
-          <div style={{ fontWeight: '700', fontSize: '16px', marginBottom: '6px' }}>No events found</div>
-          <div style={{ color: '#64748b', fontSize: '13px' }}>Be the first to create a plan on the Discovery tab!</div>
+        <div style={{ textAlign: 'center', padding: '64px 0' }}>
+          <div style={{ fontSize: '48px', marginBottom: '12px' }}>📭</div>
+          <div style={{ fontWeight: '700', fontSize: '16px', marginBottom: '6px' }}>No events yet</div>
+          <div style={{ color: '#475569', fontSize: '13px' }}>Be the first to create a plan on the Discovery tab!</div>
         </div>
       )}
 
-      {!loading && events.map((event) => {
-        const { day, month } = parseDateBadge(event.when_time);
-        const color = CATEGORY_COLORS[event.category] ?? '#60A5FA';
-        const creator = event.profiles?.full_name ?? 'Someone';
-        const participants: any[] = event.activity_participants ?? [];
-        const isJoined = participants.some((p: any) => p.user_id === user?.id);
-        const isActing = joining === event.id;
-        const facepile = participants.slice(0, 5);
-        const overflow = participants.length - 5;
+      {!loading && events.length > 0 && (
+        <div className="bento-grid">
+          {events.map((event) => {
+            const { day, month } = parseDateBadge(event.when_time);
+            const color = CATEGORY_COLORS[event.category] ?? '#60A5FA';
+            const creator = event.profiles?.full_name ?? 'Someone';
+            const participants: any[] = event.activity_participants ?? [];
+            const isJoined = participants.some((p: any) => p.user_id === user?.id);
+            const isActing = joining === event.id;
+            const facepile = participants.slice(0, 4);
+            const overflow = participants.length - 4;
 
-        return (
-          <div key={event.id} style={{
-            backgroundColor: '#121E31', borderRadius: '24px', padding: '20px',
-            display: 'flex', gap: '20px', marginBottom: '15px',
-            border: `1px solid ${isJoined ? 'rgba(243,217,154,0.12)' : 'rgba(255,255,255,0.05)'}`,
-            transition: 'border-color 0.3s',
-          }}>
+            return (
+              <div key={event.id} style={{
+                backgroundColor: theme.cardBg,
+                borderRadius: '32px',
+                padding: '20px',
+                border: `1px solid ${isJoined ? 'rgba(255,215,0,0.22)' : theme.cardBorder}`,
+                backdropFilter: 'blur(16px)',
+                boxShadow: theme.cardShadow,
+                transition: 'border-color 0.3s',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '14px',
+              }}>
 
-            {/* DATE BADGE */}
-            <div style={{
-              backgroundColor: '#1A283D', borderRadius: '16px', minWidth: '60px', height: '70px',
-              display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-              border: '1px solid rgba(255,255,255,0.05)', flexShrink: 0,
-            }}>
-              <span style={{ fontSize: '20px', fontWeight: 'bold', color: 'white' }}>{day}</span>
-              <span style={{ fontSize: '10px', fontWeight: '900', color: '#F3D99A' }}>{month}</span>
-            </div>
-
-            {/* EVENT DETAILS */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-
-              {/* Title + category */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '4px' }}>
-                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {event.description}
-                </h4>
-                <span style={{
-                  fontSize: '10px', fontWeight: '800', color, flexShrink: 0,
-                  backgroundColor: `${color}18`, padding: '2px 8px', borderRadius: '6px',
-                }}>
-                  {event.category}
-                </span>
-              </div>
-
-              {/* Meta line */}
-              <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                📍 {event.where_location}{event.when_time ? ` · 🕒 ${event.when_time}` : ''} · by {creator}
-              </div>
-
-              {/* Facepile + Join/Leave */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-
-                {/* Facepile */}
-                {participants.length === 0 ? (
-                  <span style={{ fontSize: '11px', color: '#475569' }}>No one joined yet</span>
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <div style={{ display: 'flex' }}>
-                      {facepile.map((p: any, i: number) => (
-                        <div key={p.user_id} style={{ marginLeft: i === 0 ? 0 : -8, zIndex: facepile.length - i }}>
-                          <AvatarBubble participant={p} size={26} />
-                        </div>
-                      ))}
-                      {overflow > 0 && (
-                        <div style={{
-                          marginLeft: -8, zIndex: 0,
-                          width: 26, height: 26, borderRadius: '50%',
-                          border: '2px solid #121E31', backgroundColor: '#1A283D',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '9px', fontWeight: '800', color: '#94A3B8',
-                        }}>
-                          +{overflow}
-                        </div>
-                      )}
-                    </div>
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>
-                      {participants.length} joined
-                    </span>
+                {/* TOP ROW: date badge + category */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{
+                    backgroundColor: theme.inactiveBtnBg, borderRadius: '14px',
+                    width: '52px', height: '52px',
+                    display: 'flex', flexDirection: 'column',
+                    justifyContent: 'center', alignItems: 'center',
+                    border: `1px solid ${theme.cardBorder}`, flexShrink: 0,
+                  }}>
+                    <span style={{ fontSize: '18px', fontWeight: '800', color: theme.text, lineHeight: 1 }}>{day}</span>
+                    <span style={{ fontSize: '9px', fontWeight: '900', color: '#FFD700', letterSpacing: '0.5px', marginTop: '2px' }}>{month}</span>
                   </div>
-                )}
 
-                {/* Join / Leave button */}
-                <button
-                  onClick={() => isJoined ? handleLeave(event.id) : handleJoin(event.id)}
-                  disabled={isActing}
-                  style={{
-                    padding: '5px 14px', borderRadius: '10px', flexShrink: 0,
-                    fontSize: '11px', fontWeight: '700',
-                    cursor: isActing ? 'default' : 'pointer',
-                    border: isJoined ? '1px solid rgba(243,217,154,0.35)' : '1px solid rgba(255,255,255,0.12)',
-                    backgroundColor: isJoined ? 'rgba(243,217,154,0.1)' : 'transparent',
-                    color: isJoined ? '#F3D99A' : 'white',
-                    opacity: isActing ? 0.5 : 1,
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  {isActing ? '···' : isJoined ? '✓ Joined' : 'Join'}
-                </button>
+                  <span style={{
+                    fontSize: '10px', fontWeight: '800', color,
+                    backgroundColor: `${color}1A`,
+                    padding: '4px 10px', borderRadius: '20px',
+                    border: `1px solid ${color}30`,
+                  }}>
+                    {event.category}
+                  </span>
+                </div>
 
+                {/* TITLE + META */}
+                <div>
+                  <h4 className="line-clamp-2" style={{
+                    margin: '0 0 6px 0', fontSize: '15px', fontWeight: '800',
+                    color: theme.text, lineHeight: '1.35',
+                  }}>
+                    {event.description}
+                  </h4>
+                  <p className="line-clamp-2" style={{
+                    margin: 0, fontSize: '12px', color: '#64748b', lineHeight: '1.5',
+                  }}>
+                    📍 {event.where_location}{event.when_time ? ` · 🕒 ${event.when_time}` : ''} · by {creator}
+                  </p>
+                </div>
+
+                {/* BOTTOM: Facepile + Join/Leave */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+
+                  {/* Facepile */}
+                  {participants.length === 0 ? (
+                    <span style={{ fontSize: '11px', color: theme.subText }}>No one joined yet</span>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                      <div style={{ display: 'flex' }}>
+                        {facepile.map((p: any, i: number) => (
+                          <div key={p.user_id} style={{ marginLeft: i === 0 ? 0 : -10, zIndex: facepile.length - i }}>
+                            <AvatarBubble participant={p} size={28} borderColor={theme.avatarBorder} />
+                          </div>
+                        ))}
+                        {overflow > 0 && (
+                          <div style={{
+                            marginLeft: -10, zIndex: 0,
+                            width: 28, height: 28, borderRadius: '50%',
+                            border: `2px solid ${theme.avatarBorder}`,
+                            backgroundColor: '#1A283D',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '9px', fontWeight: '800', color: '#94A3B8',
+                          }}>
+                            +{overflow}
+                          </div>
+                        )}
+                      </div>
+                      <span style={{ fontSize: '11px', color: '#475569' }}>
+                        {participants.length} joined
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Join / Leave button */}
+                  <button
+                    onClick={() => isJoined ? handleLeave(event.id) : handleJoin(event.id)}
+                    disabled={isActing}
+                    style={{
+                      padding: '8px 14px', borderRadius: '12px', flexShrink: 0,
+                      fontSize: '12px', fontWeight: '800',
+                      cursor: isActing ? 'default' : 'pointer',
+                      border: 'none',
+                      backgroundColor: isJoined ? 'rgba(255,215,0,0.12)' : '#FFD700',
+                      color: isJoined ? '#FFD700' : '#050B18',
+                      outline: isJoined ? '1px solid rgba(255,215,0,0.3)' : 'none',
+                      opacity: isActing ? 0.55 : 1,
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {isActing ? '···' : isJoined ? '✓ Joined' : 'Join →'}
+                  </button>
+
+                </div>
               </div>
-            </div>
-          </div>
-        );
-      })}
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

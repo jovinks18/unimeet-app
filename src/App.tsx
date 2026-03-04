@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Home from './pages/Home';
-import Onboarding from './pages/Onboarding';
+import OnboardingFlow from './pages/OnboardingFlow';
 import Profile from './pages/Profile';
 
 function App() {
@@ -17,25 +17,25 @@ function App() {
         <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
         
         {/* Onboarding - Only for users without profiles */}
-        <Route 
-          path="/onboarding" 
-          element={user && !profile ? <Onboarding /> : <Navigate to="/" />} 
+        <Route
+          path="/onboarding"
+          element={user && (!profile || !profile.has_onboarded) ? <OnboardingFlow /> : <Navigate to="/" />}
         />
 
-        {/* Private Routes - Need both User and Profile */}
-        <Route 
-          path="/home" 
-          element={user && profile ? <Home /> : <Navigate to="/onboarding" />} 
+        {/* Private Routes - Need both User and completed onboarding */}
+        <Route
+          path="/home"
+          element={user && profile?.has_onboarded ? <Home /> : <Navigate to="/onboarding" />}
         />
-        <Route 
-          path="/profile" 
-          element={user && profile ? <Profile /> : <Navigate to="/login" />} 
+        <Route
+          path="/profile"
+          element={user && profile?.has_onboarded ? <Profile /> : <Navigate to="/login" />}
         />
 
         {/* Smart Redirect */}
         <Route path="/" element={
-          !user ? <Navigate to="/login" /> : 
-          (!profile ? <Navigate to="/onboarding" /> : <Navigate to="/home" />)
+          !user ? <Navigate to="/login" /> :
+          (!profile || !profile.has_onboarded ? <Navigate to="/onboarding" /> : <Navigate to="/home" />)
         } />
       </Routes>
     </BrowserRouter>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
-// --- MOCK FALLBACK DATA (shown when no real friends exist yet) ---
+// ── Mock fallback (shown when no real friends exist yet) ──────────────
 const MOCK_LIVE = [
   { id: 'm1', name: 'Alex', initial: 'A', color: '#3B82F6', activity: '☕', title: 'Coffee run', location: 'Campus Café', minsAgo: 12 },
   { id: 'm2', name: 'Sarah', initial: 'S', color: '#8B5CF6', activity: '🏋️', title: 'Gym sesh', location: 'RSF', minsAgo: 34 },
@@ -15,14 +15,53 @@ const MOCK_PLANS = [
   { id: 'mp3', name: 'Jordan', initial: 'J', color: '#10B981', title: "Jordan's Plan", detail: 'Study group • Wed, 2 PM' },
 ];
 
-// --- HELPERS ---
+// ── Helpers ───────────────────────────────────────────────────────────
 const AVATAR_COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#EC4899'];
 const colorFromId = (id: string) => AVATAR_COLORS[(id?.charCodeAt(0) ?? 0) % AVATAR_COLORS.length];
 const minsAgo = (lastSeen: string) => Math.max(0, Math.floor((Date.now() - new Date(lastSeen).getTime()) / 60000));
 
-const MyCircleTab = ({ theme, joinedActivities, liveFriends, friendsPlans }: any) => {
-  const { user, profile } = useAuth();
+// Returns a soft radial glow color matching the activity icon
+const emojiGlow = (icon: string) => {
+  if (/☕|🍵|🧋/.test(icon)) return 'rgba(161, 100, 40, 0.5)';
+  if (/🏋|⚽|🏃|🎾|🏊/.test(icon)) return 'rgba(255, 110, 50, 0.45)';
+  if (/📚|💻|✏️/.test(icon)) return 'rgba(59, 130, 246, 0.45)';
+  if (/🎮|🕹/.test(icon)) return 'rgba(139, 92, 246, 0.45)';
+  if (/🎵|🎸|🎧/.test(icon)) return 'rgba(236, 72, 153, 0.45)';
+  return 'rgba(255, 215, 0, 0.3)';
+};
+
+const labelStyle: React.CSSProperties = {
+  fontSize: '11px', fontWeight: '900', color: '#475569', letterSpacing: '1.5px',
+};
+
+// ── Placeholder squad avatar cluster ─────────────────────────────────
+const SQUAD_COLORS = ['#3B82F6', '#8B5CF6', '#10B981'];
+const SquadCluster = () => (
+  <div style={{ display: 'flex', alignItems: 'center' }}>
+    {SQUAD_COLORS.map((c, i) => (
+      <div key={i} style={{
+        width: '22px', height: '22px', borderRadius: '50%',
+        backgroundColor: c, border: '2px solid rgba(15,23,42,0.9)',
+        marginLeft: i === 0 ? 0 : '-7px', zIndex: 3 - i,
+        position: 'relative', flexShrink: 0,
+      }} />
+    ))}
+  </div>
+);
+
+// ── Component ─────────────────────────────────────────────────────────
+const MyCircleTab = ({ joinedActivities, liveFriends, friendsPlans }: any) => {
+  const { user, profile, theme } = useAuth();
   const [freeToHang, setFreeToHang] = useState(profile?.current_status === 'free');
+
+  const glass: React.CSSProperties = {
+    backgroundColor: theme.cardBg,
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    borderRadius: '24px',
+    border: `1px solid ${theme.cardBorder}`,
+    boxShadow: theme.cardShadow,
+  };
 
   const handleToggle = async () => {
     const next = !freeToHang;
@@ -33,137 +72,279 @@ const MyCircleTab = ({ theme, joinedActivities, liveFriends, friendsPlans }: any
       .eq('id', user?.id);
   };
 
-  // Use real data if available, otherwise show mock
   const liveList: any[] = liveFriends?.length > 0 ? liveFriends : MOCK_LIVE;
   const plansList: any[] = friendsPlans?.length > 0 ? friendsPlans : MOCK_PLANS;
   const usingMock = !liveFriends?.length && !friendsPlans?.length;
 
-  const sectionLabel = (text: string) => (
-    <span style={{ fontSize: '10px', fontWeight: '900', color: theme.subText, letterSpacing: '1.2px' }}>{text}</span>
-  );
-
   return (
-    <div className="page-fade" style={{ width: '100%', paddingBottom: '32px' }}>
+    <div className="page-fade" style={{ width: '100%', paddingBottom: '40px', display: 'flex', flexDirection: 'column', gap: '28px' }}>
 
-      {/* STATUS TOGGLE */}
+      {/* ── STATUS WIDGET ─────────────────────────────────────────── */}
       <div style={{
-        backgroundColor: theme.card, borderRadius: '24px', padding: '18px 20px',
-        border: `1px solid ${theme.border}`, display: 'flex', justifyContent: 'space-between',
-        alignItems: 'center', marginBottom: '28px'
+        ...glass,
+        border: freeToHang ? '1px solid rgba(255,215,0,0.3)' : '1px solid rgba(255,255,255,0.06)',
+        boxShadow: freeToHang ? '0 0 28px rgba(255,215,0,0.08)' : 'none',
+        padding: '18px 20px',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        transition: 'border-color 0.3s, box-shadow 0.3s',
       }}>
         <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '14px', backgroundColor: freeToHang ? 'rgba(243,217,154,0.15)' : 'rgba(255,255,255,0.04)', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '18px', transition: '0.25s' }}>
-            ⚡
-          </div>
+          {/* Icon with pulse when active */}
+          <div
+            className={freeToHang ? 'gold-pulse' : undefined}
+            style={{
+              width: '44px', height: '44px', borderRadius: '14px',
+              backgroundColor: freeToHang ? 'rgba(255,215,0,0.12)' : 'rgba(255,255,255,0.04)',
+              display: 'flex', justifyContent: 'center', alignItems: 'center',
+              fontSize: '20px', transition: 'background-color 0.25s',
+              flexShrink: 0,
+            }}
+          >⚡</div>
           <div>
             <div style={{ fontWeight: '800', fontSize: '14px' }}>Free to hang out?</div>
-            <div style={{ fontSize: '11px', color: theme.subText, marginTop: '2px' }}>
-              {freeToHang ? 'Visible to your friends' : "Let friends know you're available"}
+            <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px' }}>
+              {freeToHang ? '✓ Visible to your friends' : "Let friends know you're available"}
             </div>
           </div>
         </div>
+
+        {/* Toggle pill */}
         <div
           onClick={handleToggle}
-          style={{ width: '48px', height: '26px', borderRadius: '13px', cursor: 'pointer', backgroundColor: freeToHang ? '#F3D99A' : 'rgba(255,255,255,0.1)', position: 'relative', transition: 'background-color 0.25s ease', flexShrink: 0 }}
+          style={{
+            width: '48px', height: '26px', borderRadius: '13px', cursor: 'pointer',
+            backgroundColor: freeToHang ? '#FFD700' : theme.inactiveBtnBg,
+            position: 'relative', transition: 'background-color 0.25s ease', flexShrink: 0,
+          }}
         >
-          <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'white', position: 'absolute', top: '3px', left: freeToHang ? '25px' : '3px', transition: 'left 0.25s ease', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
+          <div style={{
+            width: '20px', height: '20px', borderRadius: '50%',
+            backgroundColor: freeToHang ? '#050B18' : '#fff',
+            position: 'absolute', top: '3px',
+            left: freeToHang ? '25px' : '3px',
+            transition: 'left 0.25s ease, background-color 0.25s',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+          }} />
         </div>
       </div>
 
-      {/* LIVE SECTION */}
-      <div style={{ marginBottom: '28px' }}>
+      {/* ── LIVE BENTO GRID ───────────────────────────────────────── */}
+      <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          {sectionLabel('⚡ LIVE')}
-          <button style={{ backgroundColor: 'rgba(243,217,154,0.1)', border: '1px solid rgba(243,217,154,0.2)', color: '#F3D99A', borderRadius: '10px', padding: '5px 12px', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}>
-            + Share
-          </button>
+          <span style={{ ...labelStyle }}>⚡ LIVE NOW</span>
+          <button style={{
+            backgroundColor: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.2)',
+            color: '#FFD700', borderRadius: '10px', padding: '5px 12px',
+            fontSize: '11px', fontWeight: '800', cursor: 'pointer',
+          }}>+ Share</button>
         </div>
-        <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '6px', scrollbarWidth: 'none' } as any}>
-          {liveList.map((friend: any) => {
-            // Normalise real Supabase profile shape vs mock shape
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+          {liveList.map((friend: any, idx: number) => {
             const isReal = !!friend.full_name;
             const name = isReal ? friend.full_name : friend.name;
-            const initial = name?.[0] ?? '?';
+            const initial = name?.[0]?.toUpperCase() ?? '?';
             const color = isReal ? colorFromId(friend.id) : friend.color;
-            const activityIcon = friend.current_activity ?? friend.activity ?? '👋';
-            const activityTitle = friend.current_activity_title ?? friend.title ?? 'Hanging out';
+            const actIcon = friend.current_activity ?? friend.activity ?? '👋';
+            const actTitle = friend.current_activity_title ?? friend.title ?? 'Hanging out';
             const location = friend.current_location ?? friend.location ?? '—';
             const ago = isReal && friend.last_seen ? `${minsAgo(friend.last_seen)}m` : `${friend.minsAgo}m`;
+            const isWide = idx === 0; // Most recent takes full width
+
             return (
-              <div key={friend.id} style={{ backgroundColor: theme.card, borderRadius: '20px', padding: '16px', border: `1px solid ${theme.border}`, minWidth: '130px', flexShrink: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: color, display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: '800', fontSize: '13px', flexShrink: 0 }}>{initial}</div>
-                  <span style={{ fontWeight: '700', fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</span>
-                </div>
-                <div style={{ fontSize: '22px', marginBottom: '6px' }}>{activityIcon}</div>
-                <div style={{ fontSize: '12px', fontWeight: '700', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{activityTitle}</div>
-                <div style={{ fontSize: '11px', color: theme.subText, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>📍 {location}</div>
-                <div style={{ fontSize: '10px', color: '#F3D99A', marginTop: '8px', fontWeight: '700' }}>{ago} ago</div>
+              <div
+                key={friend.id}
+                style={{
+                  ...glass,
+                  padding: '18px',
+                  gridColumn: isWide ? 'span 2' : undefined,
+                  display: isWide ? 'flex' : 'block',
+                  alignItems: isWide ? 'center' : undefined,
+                  gap: isWide ? '18px' : undefined,
+                }}
+              >
+                {/* Wide card: left col = identity, right col = activity */}
+                {isWide ? (
+                  <>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                        <div style={{
+                          width: '36px', height: '36px', borderRadius: '50%',
+                          backgroundColor: color,
+                          display: 'flex', justifyContent: 'center', alignItems: 'center',
+                          fontWeight: '900', fontSize: '14px', flexShrink: 0,
+                        }}>{initial}</div>
+                        <div>
+                          <div style={{ fontWeight: '900', fontSize: '14px' }}>{name}</div>
+                          <div style={{ fontSize: '10px', color: '#FFD700', fontWeight: '700', marginTop: '1px' }}>{ago} ago</div>
+                        </div>
+                      </div>
+                      <div style={{ fontWeight: '700', fontSize: '13px', marginBottom: '3px' }}>{actTitle}</div>
+                      <div style={{ fontSize: '11px', color: '#475569' }}>📍 {location}</div>
+                    </div>
+
+                    {/* Right: big emoji with glow */}
+                    <div style={{ position: 'relative', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{
+                        position: 'absolute',
+                        width: '60px', height: '60px', borderRadius: '50%',
+                        background: `radial-gradient(circle, ${emojiGlow(actIcon)} 0%, transparent 70%)`,
+                      }} />
+                      <span style={{ fontSize: '38px', position: 'relative', lineHeight: 1 }}>{actIcon}</span>
+                    </div>
+                  </>
+                ) : (
+                  /* Narrow card: stacked layout */
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                      <div style={{
+                        width: '28px', height: '28px', borderRadius: '50%',
+                        backgroundColor: color,
+                        display: 'flex', justifyContent: 'center', alignItems: 'center',
+                        fontWeight: '900', fontSize: '11px', flexShrink: 0,
+                      }}>{initial}</div>
+                      <span style={{ fontWeight: '800', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                    </div>
+
+                    <div style={{ position: 'relative', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{
+                        position: 'absolute',
+                        width: '50px', height: '50px', borderRadius: '50%',
+                        background: `radial-gradient(circle, ${emojiGlow(actIcon)} 0%, transparent 70%)`,
+                      }} />
+                      <span style={{ fontSize: '30px', position: 'relative', lineHeight: 1 }}>{actIcon}</span>
+                    </div>
+
+                    <div style={{ fontSize: '12px', fontWeight: '700', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{actTitle}</div>
+                    <div style={{ fontSize: '10px', color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {location}</div>
+                    <div style={{ fontSize: '10px', color: '#FFD700', fontWeight: '700', marginTop: '8px' }}>{ago} ago</div>
+                  </>
+                )}
               </div>
             );
           })}
         </div>
+
         {usingMock && (
-          <div style={{ fontSize: '10px', color: theme.subText, marginTop: '8px', opacity: 0.6 }}>Add friends to see their live status here</div>
+          <div style={{ fontSize: '10px', color: '#475569', marginTop: '10px', opacity: 0.6 }}>
+            Add friends to see their live status here
+          </div>
         )}
       </div>
 
-      {/* SQUADS SECTION */}
-      <div style={{ marginBottom: '28px' }}>
-        <div style={{ marginBottom: '14px' }}>{sectionLabel('SQUADS')}</div>
-        <div style={{ border: '1.5px dashed rgba(255,255,255,0.12)', borderRadius: '20px', padding: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', color: theme.subText, fontSize: '13px', fontWeight: '700' }}>
-          <span style={{ fontSize: '18px' }}>+</span> New Squad
+      {/* ── SQUADS — Glass Folder ─────────────────────────────────── */}
+      <div>
+        <div style={{ marginBottom: '14px' }}>
+          <span style={labelStyle}>SQUADS</span>
         </div>
-      </div>
+        <div style={{
+          ...glass,
+          padding: '20px',
+          position: 'relative', overflow: 'hidden',
+        }}>
+          {/* Subtle folder tab accent */}
+          <div style={{
+            position: 'absolute', top: 0, left: '20px',
+            width: '50px', height: '3px', borderRadius: '0 0 4px 4px',
+            backgroundColor: 'rgba(255,215,0,0.35)',
+          }} />
 
-      {/* MY FRIENDS SECTION */}
-      <div style={{ marginBottom: '28px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          {sectionLabel('MY FRIENDS')}
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button style={{ background: 'none', border: 'none', color: theme.subText, fontSize: '16px', cursor: 'pointer', padding: 0 }}>🔍</button>
-            <button style={{ backgroundColor: 'rgba(243,217,154,0.1)', border: '1px solid rgba(243,217,154,0.2)', color: '#F3D99A', borderRadius: '10px', padding: '5px 12px', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}>+ Add</button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: '800', marginBottom: '5px' }}>My Squads</div>
+              <div style={{ fontSize: '11px', color: '#475569' }}>Group up with your people</div>
+            </div>
+            <SquadCluster />
+          </div>
+
+          <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.05)', margin: '16px 0' }} />
+
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '10px',
+            cursor: 'pointer', color: '#475569', fontSize: '13px', fontWeight: '700',
+          }}>
+            <div style={{
+              width: '32px', height: '32px', borderRadius: '10px',
+              backgroundColor: 'rgba(255,215,0,0.08)',
+              border: '1px solid rgba(255,215,0,0.2)',
+              display: 'flex', justifyContent: 'center', alignItems: 'center',
+              color: '#FFD700', fontSize: '18px',
+            }}>+</div>
+            <span>Create New Squad</span>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '6px' }}>
-          <div style={{ width: '60px', height: '60px', borderRadius: '50%', flexShrink: 0, border: '1.5px dashed rgba(255,255,255,0.15)', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', color: theme.subText, fontSize: '22px' }}>+</div>
-        </div>
       </div>
 
-      {/* FRIENDS' PLANS SECTION */}
-      <div style={{ marginBottom: '28px' }}>
-        <div style={{ marginBottom: '14px' }}>{sectionLabel("FRIENDS' PLANS")}</div>
+      {/* ── FRIENDS' PLANS ────────────────────────────────────────── */}
+      <div>
+        <div style={{ marginBottom: '14px' }}>
+          <span style={labelStyle}>FRIENDS' PLANS</span>
+        </div>
 
-        {/* Real joined activities */}
+        {/* Joined activities */}
         {joinedActivities?.map((post: any) => (
-          <div key={post.id} style={{ backgroundColor: theme.card, borderRadius: '20px', padding: '16px 18px', border: `1px solid ${theme.border}`, display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '12px' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: colorFromId(post.user_id ?? ''), display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: '800', fontSize: '15px', flexShrink: 0 }}>
-              {post.profiles?.full_name?.[0] ?? 'U'}
+          <div key={post.id} style={{
+            ...glass,
+            border: '1px solid rgba(255,215,0,0.18)',
+            padding: '16px 18px',
+            display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '10px',
+          }}>
+            <div style={{
+              width: '42px', height: '42px', borderRadius: '50%',
+              backgroundColor: colorFromId(post.user_id ?? ''),
+              display: 'flex', justifyContent: 'center', alignItems: 'center',
+              fontWeight: '900', fontSize: '16px', flexShrink: 0,
+            }}>
+              {post.profiles?.full_name?.[0]?.toUpperCase() ?? 'U'}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: '700', fontSize: '14px', marginBottom: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{post.profiles?.full_name}'s Plan</div>
-              <div style={{ fontSize: '12px', color: theme.subText, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{post.description} • {post.when_time}</div>
+              <div style={{ fontWeight: '800', fontSize: '14px', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {post.profiles?.full_name}'s Plan
+              </div>
+              <div style={{ fontSize: '12px', color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {post.description} • {post.when_time}
+              </div>
             </div>
-            <div style={{ backgroundColor: 'rgba(243,217,154,0.12)', color: '#F3D99A', fontSize: '11px', fontWeight: '800', padding: '6px 14px', borderRadius: '12px', border: '1px solid rgba(243,217,154,0.2)', flexShrink: 0 }}>JOINED</div>
+            <div style={{
+              backgroundColor: 'rgba(255,215,0,0.1)', color: '#FFD700',
+              fontSize: '10px', fontWeight: '900', padding: '6px 12px', borderRadius: '10px',
+              border: '1px solid rgba(255,215,0,0.25)', flexShrink: 0, letterSpacing: '0.5px',
+            }}>JOINED</div>
           </div>
         ))}
 
-        {/* Real friends' plans from Supabase (or mock fallback) */}
+        {/* Friends' plan cards */}
         {plansList.map((plan: any) => {
           const isReal = !!plan.profiles;
           const name = isReal ? plan.profiles?.full_name : plan.name;
-          const initial = name?.[0] ?? '?';
+          const initial = name?.[0]?.toUpperCase() ?? '?';
           const color = isReal ? colorFromId(plan.user_id ?? '') : plan.color;
           const title = isReal ? `${name}'s Plan` : plan.title;
           const detail = isReal ? `${plan.description} • ${plan.when_time}` : plan.detail;
+
           return (
-            <div key={plan.id} style={{ backgroundColor: theme.card, borderRadius: '20px', padding: '16px 18px', border: `1px solid ${theme.border}`, display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '12px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: color, display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: '800', fontSize: '15px', flexShrink: 0 }}>{initial}</div>
+            <div key={plan.id} style={{
+              ...glass,
+              border: '1px solid rgba(255,215,0,0.15)',
+              padding: '16px 18px',
+              display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '10px',
+            }}>
+              <div style={{
+                width: '42px', height: '42px', borderRadius: '50%',
+                backgroundColor: color,
+                display: 'flex', justifyContent: 'center', alignItems: 'center',
+                fontWeight: '900', fontSize: '16px', flexShrink: 0,
+              }}>{initial}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: '700', fontSize: '14px', marginBottom: '3px' }}>{title}</div>
-                <div style={{ fontSize: '12px', color: theme.subText, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{detail}</div>
+                <div style={{ fontWeight: '800', fontSize: '14px', marginBottom: '3px' }}>{title}</div>
+                <div style={{ fontSize: '12px', color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{detail}</div>
               </div>
-              <button style={{ backgroundColor: '#F3D99A', color: '#051124', border: 'none', fontSize: '12px', fontWeight: '800', padding: '8px 16px', borderRadius: '12px', cursor: 'pointer', flexShrink: 0 }}>Join</button>
+              <button style={{
+                backgroundColor: '#FFD700', color: '#050B18',
+                border: 'none', padding: '10px 18px', borderRadius: '14px',
+                fontWeight: '800', fontSize: '12px', cursor: 'pointer', flexShrink: 0,
+                boxShadow: '0 4px 16px rgba(255,215,0,0.3)',
+              }}>Join →</button>
             </div>
           );
         })}
