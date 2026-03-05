@@ -47,18 +47,34 @@ const MapView = ({
   theme,
   onJoin,
   onCreateEvent,
+  focusedPostId,
 }: {
   posts: any[];
   theme: any;
   onJoin: (id: string) => void;
   onCreateEvent?: () => void;
+  focusedPostId?: string | null;
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const infoWindowRef = useRef<any>(null);
+  // Stores geocoded LatLng by post.id so we can pan without re-geocoding
+  const positionsRef = useRef<Record<string, any>>({});
+  // Keep a ref to avoid stale closure inside async geocoder callbacks
+  const focusedPostIdRef = useRef(focusedPostId);
   const [locating, setLocating] = useState(false);
   const [search, setSearch] = useState('');
+
+  // Keep focusedPostIdRef current so geocoder callbacks can read it without stale closure
+  useEffect(() => { focusedPostIdRef.current = focusedPostId ?? null; }, [focusedPostId]);
+
+  // Pan & zoom whenever the parent changes the focused post
+  useEffect(() => {
+    if (!focusedPostId || !mapRef.current) return;
+    const pos = positionsRef.current[focusedPostId];
+    if (pos) { mapRef.current.panTo(pos); mapRef.current.setZoom(17); }
+  }, [focusedPostId]);
 
   const filteredPosts = useMemo(() => {
     if (!search.trim()) return posts;
@@ -120,6 +136,12 @@ const MapView = ({
 
           const position = results[0].geometry.location;
           bounds.extend(position);
+          // Cache position and auto-pan if this post is currently focused
+          positionsRef.current[post.id] = position;
+          if (focusedPostIdRef.current === post.id && mapRef.current) {
+            mapRef.current.panTo(position);
+            mapRef.current.setZoom(17);
+          }
 
           const icon = CATEGORY_ICONS[post.category] ?? '📍';
           const marker = new window.google.maps.Marker({
@@ -159,6 +181,7 @@ const MapView = ({
       cancelled = true;
       markersRef.current.forEach(m => m.setMap(null));
       markersRef.current = [];
+      positionsRef.current = {};
       infoWindowRef.current?.close();
     };
   }, [filteredPosts]);

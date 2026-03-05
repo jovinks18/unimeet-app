@@ -224,7 +224,7 @@ const DiscoveryTab = ({ categories, handlePost }: any) => {
             {/* flex:1 + minWidth:0 confines the span so text-overflow works without overflow on the parent */}
             <span style={{
               fontSize: '13px', fontWeight: when ? '600' : '400',
-              color: when ? '#fff' : '#475569',
+              color: when ? theme.text : '#475569',
               flex: 1, minWidth: 0,
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
             }}>
@@ -274,7 +274,7 @@ const DiscoveryTab = ({ categories, handlePost }: any) => {
             <span style={{ fontSize: '16px', flexShrink: 0 }}>📍</span>
             <span style={{
               fontSize: '13px', fontWeight: where ? '600' : '400',
-              color: where ? '#fff' : '#475569',
+              color: where ? theme.text : '#475569',
               flex: 1, minWidth: 0,
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
             }}>
@@ -363,7 +363,7 @@ const DiscoveryTab = ({ categories, handlePost }: any) => {
               width: '100%', boxSizing: 'border-box',
               backgroundColor: 'transparent',
               border: 'none', outline: 'none',
-              color: 'white', fontSize: '14px', resize: 'none', minHeight: '80px',
+              color: theme.text, fontSize: '14px', resize: 'none', minHeight: '80px',
               lineHeight: '1.6',
             }}
           />
