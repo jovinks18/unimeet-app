@@ -78,7 +78,6 @@ const MyCircleTab = ({ joinedActivities, liveFriends, friendsPlans }: any) => {
         .select('id, full_name, avatar_url, major, grad_year, interests')
         .eq('has_onboarded', true)
         .neq('id', user.id)
-        .order('created_at', { ascending: false })
         .limit(10);
       console.log('REAL USERS FOUND:', data?.length, data, 'Error:', error);
       if (data) setNewArrivals(data);

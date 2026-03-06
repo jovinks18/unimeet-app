@@ -61,7 +61,7 @@ const Home = () => {
     const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
     const { data, error } = await supabase
       .from('activities')
-      .select('*, profiles:user_id(*)')
+      .select('*, profiles!user_id(*)')
       .gte('created_at', fortyEightHoursAgo)
       .order('created_at', { ascending: false });
     console.log('Raw posts from DB:', data, 'Error:', error);
@@ -70,7 +70,7 @@ const Home = () => {
 
   const fetchJoinedActivities = async () => {
     if (!user) return;
-    const { data } = await supabase.from('activity_participants').select('activities(*, profiles:user_id(*))').eq('user_id', user.id);
+    const { data } = await supabase.from('activity_participants').select('activities(*, profiles!user_id(*))').eq('user_id', user.id);
     if (data) setJoinedActivities(data.map((item: any) => item.activities));
   };
 
@@ -92,7 +92,7 @@ const Home = () => {
     const { data: live } = await supabase.from('profiles').select('*').in('id', friendIds).gte('last_seen', twoHoursAgo);
     if (live) setLiveFriends(live);
 
-    const { data: plans } = await supabase.from('activities').select('*, profiles:user_id(*)').in('user_id', friendIds).order('created_at', { ascending: false });
+    const { data: plans } = await supabase.from('activities').select('*, profiles!user_id(*)').in('user_id', friendIds).order('created_at', { ascending: false });
     if (plans) setFriendsPlans(plans);
   };
 
