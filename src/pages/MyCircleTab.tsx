@@ -80,7 +80,7 @@ const MyCircleTab = ({ joinedActivities, liveFriends, friendsPlans }: any) => {
         .neq('id', user.id)
         .order('created_at', { ascending: false })
         .limit(10);
-      console.log('New Arrivals Data:', data, 'Error:', error);
+      console.log('REAL USERS FOUND:', data?.length, data, 'Error:', error);
       if (data) setNewArrivals(data);
     };
     fetchArrivals();
@@ -118,7 +118,7 @@ const MyCircleTab = ({ joinedActivities, liveFriends, friendsPlans }: any) => {
           <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '8px', scrollbarWidth: 'none' }}>
             {newArrivals.map(p => {
               const imgUrl = avatarPublicUrl(p.avatar_url);
-              const initial = p.full_name?.[0]?.toUpperCase() ?? '?';
+              const initial = p.full_name?.[0]?.toUpperCase() ?? 'N';
               const color = colorFromId(p.id);
               return (
                 <div
@@ -150,7 +150,7 @@ const MyCircleTab = ({ joinedActivities, liveFriends, friendsPlans }: any) => {
                     fontSize: '10px', fontWeight: '700', color: theme.text,
                     maxWidth: '60px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     textAlign: 'center',
-                  }}>{p.full_name?.split(' ')[0] ?? '?'}</span>
+                  }}>{p.full_name?.split(' ')[0] ?? 'New User'}</span>
                 </div>
               );
             })}
